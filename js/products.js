@@ -1,9 +1,11 @@
 /**
  * Dhvani (ध्वनि) - Sound, simplified.
- * Product Catalog Data & Vector Illustration Engine
+ * Product Catalog Data & High-Fidelity Vector Illustration Engine
  *
- * Each product defines specs, marketing copy, color variants, and an SVG illustration generator.
- * Real photography can easily replace illustrations by setting `imagePath: "images/your-photo.png"`.
+ * Each product defines specs, marketing copy, color variants, and a robust SVG illustration generator.
+ * Gradient IDs are scoped with unique UIDs to prevent DOM collisions, and brittle SVG filter tags
+ * are replaced with GPU-accelerated CSS drop shadows for 100% reliable rendering across all browsers.
+ * Real photography can replace illustrations by setting `imagePath: "images/your-photo.png"`.
  */
 
 const PRODUCTS = [
@@ -281,28 +283,40 @@ function getProductById(id) {
 }
 
 /**
- * Calculate light/dark contrast adjustments for SVG rendering
+ * Calculate light/dark contrast adjustments safely
  */
 function shadeColor(color, percent) {
-  let num = parseInt(color.replace("#", ""), 16);
+  let clean = color.replace("#", "");
+  if (clean.length === 3) {
+    clean = clean.split("").map(c => c + c).join("");
+  }
+  let num = parseInt(clean, 16);
+  if (isNaN(num)) return color;
+
   let amt = Math.round(2.55 * percent);
   let R = (num >> 16) + amt;
   let G = (num >> 8 & 0x00FF) + amt;
   let B = (num & 0x0000FF) + amt;
+
+  R = Math.min(255, Math.max(0, R));
+  G = Math.min(255, Math.max(0, G));
+  B = Math.min(255, Math.max(0, B));
+
   return "#" + (
     0x1000000 +
-    (R < 255 ? (R < 0 ? 0 : R) : 255) * 0x10000 +
-    (G < 255 ? (G < 0 ? 0 : G) : 255) * 0x100 +
-    (B < 255 ? (B < 0 ? 0 : B) : 255)
+    R * 0x10000 +
+    G * 0x100 +
+    B
   ).toString(16).slice(1);
 }
 
 /**
- * Clean, Apple-styled SVG Vector Illustrations
- * Each visual adjusts seamlessly when a color swatch is clicked.
+ * High-Precision Vector SVG Illustration Generators
+ * All gradient IDs are dynamically scoped via a unique UID to eliminate DOM collisions.
+ * Brittle SVG filter tags are avoided in favor of rock-solid CSS drop-shadows.
  */
 const SVG_GENERATORS = {
-  "over-ear": (color) => {
+  "over-ear": (color, uid) => {
     const dark = shadeColor(color, -25);
     const light = shadeColor(color, 25);
     const highlight = shadeColor(color, 45);
@@ -311,36 +325,33 @@ const SVG_GENERATORS = {
     const cushion = shadeColor(color, -15);
 
     return `
-    <svg class="product-svg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Max Over-Ear Headphones illustration">
+    <svg class="product-svg" viewBox="0 0 500 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Max Over-Ear Headphones illustration">
       <defs>
-        <linearGradient id="headbandGrad" x1="150" y1="60" x2="350" y2="60" gradientUnits="userSpaceOnUse">
+        <linearGradient id="${uid}_headband" x1="150" y1="60" x2="350" y2="60" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stop-color="${dark}"/>
           <stop offset="50%" stop-color="${light}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </linearGradient>
-        <linearGradient id="metalArm" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="${uid}_metal" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="${metalLight}"/>
           <stop offset="50%" stop-color="${metal}"/>
           <stop offset="100%" stop-color="#48484a"/>
         </linearGradient>
-        <radialGradient id="cupL" cx="30%" cy="30%" r="70%">
+        <radialGradient id="${uid}_cupL" cx="30%" cy="30%" r="70%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <radialGradient id="cupR" cx="30%" cy="30%" r="70%">
+        <radialGradient id="${uid}_cupR" cx="30%" cy="30%" r="70%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="130%" filterUnits="userSpaceOnUse">
-          <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.08"/>
-        </filter>
       </defs>
 
-      <g filter="url(#subtleShadow)">
+      <g class="svg-artwork-group">
         <!-- Headband Outer Arc -->
-        <path d="M 120 280 C 120 120, 380 120, 380 280" stroke="url(#headbandGrad)" stroke-width="26" stroke-linecap="round" fill="none"/>
+        <path d="M 120 280 C 120 120, 380 120, 380 280" stroke="url(#${uid}_headband)" stroke-width="26" stroke-linecap="round" fill="none"/>
         
         <!-- Headband Breathable Canopy Mesh Inner -->
         <path d="M 148 240 C 155 130, 345 130, 352 240" stroke="${cushion}" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 4" fill="none" opacity="0.6"/>
@@ -349,23 +360,23 @@ const SVG_GENERATORS = {
         <path d="M 148 242 C 160 148, 340 148, 352 242" stroke="${cushion}" stroke-width="6" stroke-linecap="round" fill="none"/>
 
         <!-- Left Telescopic Arm -->
-        <path d="M 125 240 L 125 295" stroke="url(#metalArm)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 125 240 L 125 295" stroke="url(#${uid}_metal)" stroke-width="10" stroke-linecap="round"/>
         <rect x="119" y="270" width="12" height="18" rx="4" fill="${metal}"/>
         <!-- Left Yoke Gimbal -->
-        <path d="M 125 292 C 125 325, 95 330, 95 348" stroke="url(#metalArm)" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <path d="M 125 292 C 125 325, 95 330, 95 348" stroke="url(#${uid}_metal)" stroke-width="8" stroke-linecap="round" fill="none"/>
 
         <!-- Right Telescopic Arm -->
-        <path d="M 375 240 L 375 295" stroke="url(#metalArm)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 375 240 L 375 295" stroke="url(#${uid}_metal)" stroke-width="10" stroke-linecap="round"/>
         <rect x="369" y="270" width="12" height="18" rx="4" fill="${metal}"/>
         <!-- Right Yoke Gimbal -->
-        <path d="M 375 292 C 375 325, 405 330, 405 348" stroke="url(#metalArm)" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <path d="M 375 292 C 375 325, 405 330, 405 348" stroke="url(#${uid}_metal)" stroke-width="8" stroke-linecap="round" fill="none"/>
 
         <!-- Left Ear Cushion (plush back) -->
         <ellipse cx="118" cy="360" rx="36" ry="68" fill="${cushion}" transform="rotate(-6 118 360)"/>
         <ellipse cx="120" cy="360" rx="30" ry="62" fill="${dark}" opacity="0.4" transform="rotate(-6 120 360)"/>
 
         <!-- Left Anodized Earcup Outer Shell -->
-        <ellipse cx="132" cy="358" rx="38" ry="64" fill="url(#cupL)" transform="rotate(-6 132 358)"/>
+        <ellipse cx="132" cy="358" rx="38" ry="64" fill="url(#${uid}_cupL)" transform="rotate(-6 132 358)"/>
         <ellipse cx="132" cy="358" rx="34" ry="60" stroke="${highlight}" stroke-width="1.5" fill="none" opacity="0.35" transform="rotate(-6 132 358)"/>
         <!-- Acoustic Port / ANC mic slot -->
         <rect x="132" y="322" width="2" height="10" rx="1" fill="${dark}" opacity="0.6"/>
@@ -375,7 +386,7 @@ const SVG_GENERATORS = {
         <ellipse cx="380" cy="360" rx="30" ry="62" fill="${dark}" opacity="0.4" transform="rotate(6 380 360)"/>
 
         <!-- Right Anodized Earcup Outer Shell -->
-        <ellipse cx="368" cy="358" rx="38" ry="64" fill="url(#cupR)" transform="rotate(6 368 358)"/>
+        <ellipse cx="368" cy="358" rx="38" ry="64" fill="url(#${uid}_cupR)" transform="rotate(6 368 358)"/>
         <ellipse cx="368" cy="358" rx="34" ry="60" stroke="${highlight}" stroke-width="1.5" fill="none" opacity="0.35" transform="rotate(6 368 358)"/>
         <!-- Acoustic Port / ANC mic slot -->
         <rect x="366" y="322" width="2" height="10" rx="1" fill="${dark}" opacity="0.6"/>
@@ -384,31 +395,28 @@ const SVG_GENERATORS = {
     `;
   },
 
-  "over-ear-studio": (color) => {
+  "over-ear-studio": (color, uid) => {
     const dark = shadeColor(color, -30);
     const light = shadeColor(color, 20);
     const highlight = shadeColor(color, 35);
     const metal = "#9a9aa0";
 
     return `
-    <svg class="product-svg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Studio Reference Headphones illustration">
+    <svg class="product-svg" viewBox="0 0 500 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Studio Reference Headphones illustration">
       <defs>
-        <radialGradient id="studioCupL" cx="35%" cy="35%" r="65%">
+        <radialGradient id="${uid}_studioL" cx="35%" cy="35%" r="65%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <radialGradient id="studioCupR" cx="35%" cy="35%" r="65%">
+        <radialGradient id="${uid}_studioR" cx="35%" cy="35%" r="65%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <filter id="subtleShadowStudio" x="-10%" y="-10%" width="120%" height="130%" filterUnits="userSpaceOnUse">
-          <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.08"/>
-        </filter>
       </defs>
 
-      <g filter="url(#subtleShadowStudio)">
+      <g class="svg-artwork-group">
         <!-- Twin Spring Steel Headband -->
         <path d="M 125 260 C 125 110, 375 110, 375 260" stroke="${metal}" stroke-width="5" fill="none"/>
         <path d="M 132 260 C 132 118, 368 118, 368 260" stroke="${metal}" stroke-width="4" fill="none"/>
@@ -429,7 +437,7 @@ const SVG_GENERATORS = {
 
         <!-- Left Ear Cup (Studio Circular Acoustic Enclosure) -->
         <circle cx="122" cy="355" r="64" fill="${dark}"/>
-        <circle cx="122" cy="355" r="54" fill="url(#studioCupL)"/>
+        <circle cx="122" cy="355" r="54" fill="url(#${uid}_studioL)"/>
         <!-- Planar Acoustic Open Grille Pattern -->
         <circle cx="122" cy="355" r="34" stroke="${dark}" stroke-width="3" stroke-dasharray="4 3" fill="none"/>
         <circle cx="122" cy="355" r="22" stroke="${metal}" stroke-width="2" fill="none" opacity="0.6"/>
@@ -439,7 +447,7 @@ const SVG_GENERATORS = {
 
         <!-- Right Ear Cup -->
         <circle cx="378" cy="355" r="64" fill="${dark}"/>
-        <circle cx="378" cy="355" r="54" fill="url(#studioCupR)"/>
+        <circle cx="378" cy="355" r="54" fill="url(#${uid}_studioR)"/>
         <!-- Planar Grille Pattern -->
         <circle cx="378" cy="355" r="34" stroke="${dark}" stroke-width="3" stroke-dasharray="4 3" fill="none"/>
         <circle cx="378" cy="355" r="22" stroke="${metal}" stroke-width="2" fill="none" opacity="0.6"/>
@@ -449,50 +457,47 @@ const SVG_GENERATORS = {
     `;
   },
 
-  "in-ear-pro": (color) => {
+  "in-ear-pro": (color, uid) => {
     const dark = shadeColor(color, -25);
     const light = shadeColor(color, 25);
     const highlight = shadeColor(color, 40);
     const tipColor = shadeColor(color, 15);
 
     return `
-    <svg class="product-svg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Air Pro Wireless Earbuds and Charging Case illustration">
+    <svg class="product-svg" viewBox="0 0 500 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Air Pro Wireless Earbuds and Charging Case illustration">
       <defs>
-        <radialGradient id="caseBodyGrad" cx="35%" cy="30%" r="70%">
+        <radialGradient id="${uid}_caseBody" cx="35%" cy="30%" r="70%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <linearGradient id="stemGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="${uid}_stem" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stop-color="${light}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </linearGradient>
-        <filter id="proDrop" x="-10%" y="-10%" width="120%" height="130%" filterUnits="userSpaceOnUse">
-          <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.08"/>
-        </filter>
       </defs>
 
-      <g filter="url(#proDrop)">
+      <g class="svg-artwork-group">
         <!-- Premium Compact Wireless Charging Case -->
-        <rect x="175" y="240" width="150" height="190" rx="48" fill="url(#caseBodyGrad)"/>
+        <rect x="175" y="240" width="150" height="190" rx="48" fill="url(#${uid}_caseBody)"/>
         <!-- Lid parting seam -->
         <path d="M 175 300 L 325 300" stroke="${dark}" stroke-width="1.5" opacity="0.5"/>
         <path d="M 175 301 L 325 301" stroke="${highlight}" stroke-width="0.8" opacity="0.6"/>
         <!-- LED Status Indicator (Soft Glow) -->
-        <circle cx="250" cy="326" r="3" fill="#34c759"/>
+        <circle cx="250" cy="326" r="3.5" fill="#34c759"/>
         <!-- Case Bevel Highlight -->
         <rect x="178" y="243" width="144" height="184" rx="45" stroke="${highlight}" stroke-width="1" fill="none" opacity="0.3"/>
 
         <!-- Left Earbud (Floating with Stem & Silicone Tip) -->
         <g transform="translate(10, 0)">
-          <!-- Acoustic Earbud Acoustic Body -->
-          <circle cx="115" cy="170" r="30" fill="url(#caseBodyGrad)"/>
+          <!-- Acoustic Earbud Body -->
+          <circle cx="115" cy="170" r="30" fill="url(#${uid}_caseBody)"/>
           <!-- Medical Grade Silicone Tip -->
           <path d="M 85 160 C 70 160, 60 170, 60 180 C 60 190, 70 200, 85 200 Z" fill="${tipColor}" opacity="0.9"/>
           <!-- Acoustic Port Grille -->
           <ellipse cx="115" cy="155" rx="5" ry="3" fill="${dark}" opacity="0.7"/>
           <!-- Pro Stem with Force Sensor Indentation -->
-          <rect x="120" y="180" width="16" height="65" rx="8" fill="url(#stemGrad)" transform="rotate(-12 120 180)"/>
+          <rect x="120" y="180" width="16" height="65" rx="8" fill="url(#${uid}_stem)" transform="rotate(-12 120 180)"/>
           <rect x="122" y="208" width="4" height="14" rx="2" fill="${dark}" opacity="0.5" transform="rotate(-12 120 180)"/>
           <!-- Microphone Mesh Port -->
           <circle cx="132" cy="235" r="2" fill="#333"/>
@@ -501,13 +506,13 @@ const SVG_GENERATORS = {
         <!-- Right Earbud (Mirrored / Floating) -->
         <g transform="translate(-10, 0)">
           <!-- Acoustic Earbud Body -->
-          <circle cx="385" cy="170" r="30" fill="url(#caseBodyGrad)"/>
+          <circle cx="385" cy="170" r="30" fill="url(#${uid}_caseBody)"/>
           <!-- Silicone Tip -->
           <path d="M 415 160 C 430 160, 440 170, 440 180 C 440 190, 430 200, 415 200 Z" fill="${tipColor}" opacity="0.9"/>
           <!-- Acoustic Port Grille -->
           <ellipse cx="385" cy="155" rx="5" ry="3" fill="${dark}" opacity="0.7"/>
           <!-- Stem with Sensor -->
-          <rect x="364" y="180" width="16" height="65" rx="8" fill="url(#stemGrad)" transform="rotate(12 364 180)"/>
+          <rect x="364" y="180" width="16" height="65" rx="8" fill="url(#${uid}_stem)" transform="rotate(12 364 180)"/>
           <rect x="374" y="208" width="4" height="14" rx="2" fill="${dark}" opacity="0.5" transform="rotate(12 364 180)"/>
           <!-- Microphone Mesh Port -->
           <circle cx="368" cy="235" r="2" fill="#333"/>
@@ -517,44 +522,40 @@ const SVG_GENERATORS = {
     `;
   },
 
-  "in-ear": (color) => {
+  "in-ear": (color, uid) => {
     const dark = shadeColor(color, -25);
-    const light = shadeColor(color, 25);
     const highlight = shadeColor(color, 40);
 
     return `
-    <svg class="product-svg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Air Wireless Earbuds illustration">
+    <svg class="product-svg" viewBox="0 0 500 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Air Wireless Earbuds illustration">
       <defs>
-        <radialGradient id="airCaseGrad" cx="30%" cy="30%" r="70%">
+        <radialGradient id="${uid}_airCase" cx="30%" cy="30%" r="70%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <filter id="airDrop" x="-10%" y="-10%" width="120%" height="130%" filterUnits="userSpaceOnUse">
-          <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000000" flood-opacity="0.08"/>
-        </filter>
       </defs>
 
-      <g filter="url(#airDrop)">
+      <g class="svg-artwork-group">
         <!-- Horizontal Pebble Charging Case -->
-        <rect x="160" y="260" width="180" height="140" rx="50" fill="url(#airCaseGrad)"/>
+        <rect x="160" y="260" width="180" height="140" rx="50" fill="url(#${uid}_airCase)"/>
         <!-- Lid Line -->
         <path d="M 160 305 L 340 305" stroke="${dark}" stroke-width="1.5" opacity="0.4"/>
         <!-- Indicator LED -->
-        <circle cx="250" cy="335" r="2.5" fill="#34c759"/>
+        <circle cx="250" cy="335" r="3" fill="#34c759"/>
 
         <!-- Left Earbud Minimalist Stem -->
         <g transform="translate(15, 20)">
-          <circle cx="120" cy="160" r="26" fill="url(#airCaseGrad)"/>
-          <rect x="122" y="165" width="14" height="60" rx="7" fill="url(#airCaseGrad)" transform="rotate(-8 122 165)"/>
+          <circle cx="120" cy="160" r="26" fill="url(#${uid}_airCase)"/>
+          <rect x="122" y="165" width="14" height="60" rx="7" fill="url(#${uid}_airCase)" transform="rotate(-8 122 165)"/>
           <!-- Speaker acoustic mesh -->
           <ellipse cx="106" cy="160" rx="8" ry="12" fill="${dark}" opacity="0.8"/>
         </g>
 
         <!-- Right Earbud -->
         <g transform="translate(-15, 20)">
-          <circle cx="380" cy="160" r="26" fill="url(#airCaseGrad)"/>
-          <rect x="364" y="165" width="14" height="60" rx="7" fill="url(#airCaseGrad)" transform="rotate(8 364 165)"/>
+          <circle cx="380" cy="160" r="26" fill="url(#${uid}_airCase)"/>
+          <rect x="364" y="165" width="14" height="60" rx="7" fill="url(#${uid}_airCase)" transform="rotate(8 364 165)"/>
           <!-- Speaker acoustic mesh -->
           <ellipse cx="394" cy="160" rx="8" ry="12" fill="${dark}" opacity="0.8"/>
         </g>
@@ -563,31 +564,27 @@ const SVG_GENERATORS = {
     `;
   },
 
-  "sport": (color) => {
+  "sport": (color, uid) => {
     const dark = shadeColor(color, -30);
-    const light = shadeColor(color, 25);
     const highlight = shadeColor(color, 40);
     const hookColor = shadeColor(color, -10);
 
     return `
-    <svg class="product-svg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Sport Waterproof Wireless Earbuds illustration">
+    <svg class="product-svg" viewBox="0 0 500 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Sport Waterproof Wireless Earbuds illustration">
       <defs>
-        <radialGradient id="sportGrad" cx="30%" cy="30%" r="70%">
+        <radialGradient id="${uid}_sport" cx="30%" cy="30%" r="70%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <filter id="sportDrop" x="-10%" y="-10%" width="120%" height="130%" filterUnits="userSpaceOnUse">
-          <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.08"/>
-        </filter>
       </defs>
 
-      <g filter="url(#sportDrop)">
+      <g class="svg-artwork-group">
         <!-- Ruggedized Sport Charging Case with Rubberized Texture -->
         <rect x="150" y="270" width="200" height="130" rx="36" fill="${dark}"/>
-        <rect x="155" y="275" width="190" height="120" rx="32" fill="url(#sportGrad)"/>
+        <rect x="155" y="275" width="190" height="120" rx="32" fill="url(#${uid}_sport)"/>
         <path d="M 150 320 L 350 320" stroke="${dark}" stroke-width="2"/>
-        <circle cx="250" cy="345" r="3" fill="#34c759"/>
+        <circle cx="250" cy="345" r="3.5" fill="#34c759"/>
         <!-- Rugged side grip grooves -->
         <rect x="146" y="335" width="4" height="24" rx="2" fill="${dark}"/>
         <rect x="350" y="335" width="4" height="24" rx="2" fill="${dark}"/>
@@ -596,7 +593,7 @@ const SVG_GENERATORS = {
         <g transform="translate(10, -10)">
           <!-- Dynamic Secure Earhook Arch -->
           <path d="M 140 180 C 130 110, 70 120, 75 185 C 80 230, 115 220, 125 200" stroke="${hookColor}" stroke-width="12" stroke-linecap="round" fill="none"/>
-          <circle cx="130" cy="190" r="24" fill="url(#sportGrad)"/>
+          <circle cx="130" cy="190" r="24" fill="url(#${uid}_sport)"/>
           <!-- Sweat-proof silicone tip -->
           <ellipse cx="108" cy="190" rx="10" ry="14" fill="${dark}"/>
           <!-- Physical tactile control button -->
@@ -607,7 +604,7 @@ const SVG_GENERATORS = {
         <g transform="translate(-10, -10)">
           <!-- Dynamic Secure Earhook Arch -->
           <path d="M 360 180 C 370 110, 430 120, 425 185 C 420 230, 385 220, 375 200" stroke="${hookColor}" stroke-width="12" stroke-linecap="round" fill="none"/>
-          <circle cx="370" cy="190" r="24" fill="url(#sportGrad)"/>
+          <circle cx="370" cy="190" r="24" fill="url(#${uid}_sport)"/>
           <ellipse cx="392" cy="190" rx="10" ry="14" fill="${dark}"/>
           <circle cx="368" cy="190" r="10" stroke="${highlight}" stroke-width="2" fill="${dark}"/>
         </g>
@@ -616,41 +613,37 @@ const SVG_GENERATORS = {
     `;
   },
 
-  "go": (color) => {
+  "go": (color, uid) => {
     const dark = shadeColor(color, -25);
-    const light = shadeColor(color, 25);
     const highlight = shadeColor(color, 40);
 
     return `
-    <svg class="product-svg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Go Budget Wireless Earphones illustration">
+    <svg class="product-svg" viewBox="0 0 500 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dhvani Go Budget Wireless Earphones illustration">
       <defs>
-        <radialGradient id="goGrad" cx="35%" cy="35%" r="65%">
+        <radialGradient id="${uid}_go" cx="35%" cy="35%" r="65%">
           <stop offset="0%" stop-color="${highlight}"/>
           <stop offset="60%" stop-color="${color}"/>
           <stop offset="100%" stop-color="${dark}"/>
         </radialGradient>
-        <filter id="goDrop" x="-10%" y="-10%" width="120%" height="130%" filterUnits="userSpaceOnUse">
-          <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000000" flood-opacity="0.07"/>
-        </filter>
       </defs>
 
-      <g filter="url(#goDrop)">
+      <g class="svg-artwork-group">
         <!-- Ultra-compact Slim Pocket Case -->
-        <rect x="170" y="270" width="160" height="120" rx="42" fill="url(#goGrad)"/>
+        <rect x="170" y="270" width="160" height="120" rx="42" fill="url(#${uid}_go)"/>
         <path d="M 170 310 L 330 310" stroke="${dark}" stroke-width="1.5" opacity="0.4"/>
-        <circle cx="250" cy="335" r="2.5" fill="#34c759"/>
+        <circle cx="250" cy="335" r="3" fill="#34c759"/>
 
         <!-- Left Earbud -->
         <g transform="translate(20, 30)">
-          <circle cx="130" cy="155" r="22" fill="url(#goGrad)"/>
-          <rect x="130" y="160" width="11" height="48" rx="5.5" fill="url(#goGrad)" transform="rotate(-6 130 160)"/>
+          <circle cx="130" cy="155" r="22" fill="url(#${uid}_go)"/>
+          <rect x="130" y="160" width="11" height="48" rx="5.5" fill="url(#${uid}_go)" transform="rotate(-6 130 160)"/>
           <ellipse cx="118" cy="155" rx="7" ry="10" fill="${dark}"/>
         </g>
 
         <!-- Right Earbud -->
         <g transform="translate(-20, 30)">
-          <circle cx="370" cy="155" r="22" fill="url(#goGrad)"/>
-          <rect x="359" y="160" width="11" height="48" rx="5.5" fill="url(#goGrad)" transform="rotate(6 359 160)"/>
+          <circle cx="370" cy="155" r="22" fill="url(#${uid}_go)"/>
+          <rect x="359" y="160" width="11" height="48" rx="5.5" fill="url(#${uid}_go)" transform="rotate(6 359 160)"/>
           <ellipse cx="382" cy="155" rx="7" ry="10" fill="${dark}"/>
         </g>
       </g>
@@ -667,11 +660,15 @@ const SVG_GENERATORS = {
 function renderProductVisual(product, selectedHex, className = "") {
   if (!product) return "";
   if (product.imagePath && product.imagePath.trim() !== "") {
-    return `<img src="${product.imagePath}" alt="${product.name}" class="product-img ${className}" loading="lazy" />`;
+    return `
+      <div class="product-svg-wrapper ${className}" data-product-id="${product.id}">
+        <img src="${product.imagePath}" alt="${product.name}" class="product-img" loading="lazy" />
+      </div>`;
   }
   const color = selectedHex || (product.colors && product.colors[0] ? product.colors[0].hex : "#1d1d1f");
   const generator = SVG_GENERATORS[product.visualType] || SVG_GENERATORS["over-ear"];
-  const svgMarkup = generator(color);
+  const uid = "p_" + Math.random().toString(36).slice(2, 9);
+  const svgMarkup = generator(color, uid);
   return `<div class="product-svg-wrapper ${className}" data-product-id="${product.id}">${svgMarkup}</div>`;
 }
 
