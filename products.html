@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Products — Dhvani Audio</title>
+  <meta name="description" content="Explore Dhvani over-ear headphones and in-ear earphones. Minimalist engineering, active noise cancellation, and authentic acoustic clarity.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Navigation -->
+  <header id="site-header"></header>
+
+  <main>
+    <section class="container products-header fade-up">
+      <p class="feature-eyebrow">Acoustic Collection</p>
+      <h1 class="headline-section">Choose your sound.</h1>
+      <p class="subheadline" style="max-width: 600px; margin: 10px auto 0 auto;">Precision engineered over-ear headphones and in-ear earphones.</p>
+    </section>
+
+    <section class="container" style="padding-bottom: 90px;">
+      <!-- Filter and Sort Bar (No Page Reload) -->
+      <div class="filter-bar">
+        <div class="filter-tabs" role="tablist" aria-label="Filter products by category">
+          <button class="filter-tab active" data-category="all" role="tab" aria-selected="true">All Models</button>
+          <button class="filter-tab" data-category="headphones" role="tab" aria-selected="false">Headphones</button>
+          <button class="filter-tab" data-category="earphones" role="tab" aria-selected="false">Earphones</button>
+        </div>
+
+        <div class="sort-select-wrapper">
+          <label for="sort-select">Sort by:</label>
+          <select id="sort-select" class="sort-select" aria-label="Sort products">
+            <option value="featured">Featured</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name-asc">Name: A to Z</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Product Grid -->
+      <div class="product-grid" id="products-catalog-grid">
+        <!-- Rendered by JavaScript -->
+      </div>
+
+      <!-- Empty Results State (if any) -->
+      <div id="no-products-message" style="display: none; text-align: center; padding: 60px 20px;">
+        <h3 class="headline-card">No products found</h3>
+        <p class="body-large" style="margin-top: 10px;">Try switching your category filter.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Dynamic Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="js/products.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      let currentCategory = "all";
+      let currentSort = "featured";
+
+      // Check URL parameters for initial category filter
+      const urlParams = new URLSearchParams(window.location.search);
+      const catParam = urlParams.get("category");
+      if (catParam && ["headphones", "earphones"].includes(catParam.toLowerCase())) {
+        currentCategory = catParam.toLowerCase();
+      }
+
+      const tabs = document.querySelectorAll(".filter-tab");
+      const sortSelect = document.getElementById("sort-select");
+      const grid = document.getElementById("products-catalog-grid");
+      const emptyMsg = document.getElementById("no-products-message");
+
+      // Update active tab style
+      tabs.forEach(tab => {
+        const cat = tab.getAttribute("data-category");
+        if (cat === currentCategory) {
+          tab.classList.add("active");
+          tab.setAttribute("aria-selected", "true");
+        } else {
+          tab.classList.remove("active");
+          tab.setAttribute("aria-selected", "false");
+        }
+
+        tab.addEventListener("click", () => {
+          tabs.forEach(t => {
+            t.classList.remove("active");
+            t.setAttribute("aria-selected", "false");
+          });
+          tab.classList.add("active");
+          tab.setAttribute("aria-selected", "true");
+          currentCategory = cat;
+          renderCatalog();
+        });
+      });
+
+      // Sort handler
+      sortSelect.addEventListener("change", (e) => {
+        currentSort = e.target.value;
+        renderCatalog();
+      });
+
+      function renderCatalog() {
+        let items = [...window.PRODUCTS];
+
+        // 1. Filter
+        if (currentCategory !== "all") {
+          items = items.filter(p => p.category === currentCategory);
+        }
+
+        // 2. Sort
+        if (currentSort === "price-asc") {
+          items.sort((a, b) => a.price - b.price);
+        } else if (currentSort === "price-desc") {
+          items.sort((a, b) => b.price - a.price);
+        } else if (currentSort === "name-asc") {
+          items.sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        if (items.length === 0) {
+          grid.innerHTML = "";
+          emptyMsg.style.display = "block";
+          return;
+        }
+
+        emptyMsg.style.display = "none";
+        grid.innerHTML = items.map(p => `
+          <div class="product-card fade-up in-view">
+            <span class="card-badge">${p.badge}</span>
+            <a href="product.html?id=${p.id}" class="product-card-visual" aria-label="View ${p.name}">
+              ${renderProductVisual(p, p.colors[0].hex)}
+            </a>
+            <h2 class="product-card-title"><a href="product.html?id=${p.id}">${p.name}</a></h2>
+            <p class="product-card-tagline">${p.tagline}</p>
+            <p class="product-card-price">${formatPrice(p.price)}</p>
+            
+            <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
+              ${p.colors.map(c => `
+                <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: ${c.hex}; border: 1px solid rgba(0,0,0,0.15);" title="${c.name}"></span>
+              `).join("")}
+            </div>
+
+            <div class="product-card-actions">
+              <button class="btn-pill add-to-bag-btn" data-id="${p.id}" aria-label="Add ${p.name} to bag">
+                Add to Bag
+              </button>
+              <a href="product.html?id=${p.id}" class="btn-link">Details <span class="arrow">›</span></a>
+            </div>
+          </div>
+        `).join("");
+
+        // Attach Add to Bag listeners
+        grid.querySelectorAll(".add-to-bag-btn").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            const id = e.currentTarget.getAttribute("data-id");
+            addToCart(id);
+          });
+        });
+      }
+
+      // Initial render
+      renderCatalog();
+    });
+  </script>
+</body>
+</html>

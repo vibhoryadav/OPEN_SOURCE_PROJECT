@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — Dhvani Audio</title>
+  <meta name="description" content="Secure checkout for your Dhvani audio order. Express shipping across India.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Global Navigation -->
+  <header id="site-header"></header>
+
+  <main>
+    <div class="container">
+      <!-- Container for Checkout Form or Confirmation Screen -->
+      <div id="checkout-view-container">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Dynamic Global Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="js/products.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById("checkout-view-container");
+
+      function renderCheckout() {
+        const { cart, itemCount, subtotal, gst, total } = getCartCalculations();
+
+        // If bag is empty and no recent order
+        if (cart.length === 0) {
+          container.innerHTML = `
+            <div class="empty-cart-state fade-up in-view">
+              <h1 class="headline-section" style="margin-bottom: 12px;">Your Bag is empty.</h1>
+              <p class="body-large" style="margin-bottom: 28px;">Add items to your bag before checking out.</p>
+              <a href="products.html" class="btn-pill">Explore Audio Products</a>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = `
+          <section class="checkout-header fade-up in-view">
+            <h1 class="headline-section">Checkout</h1>
+            <p class="body-large" style="margin-top: 6px;">Enter your delivery address and select a payment method.</p>
+          </section>
+
+          <div class="checkout-grid fade-up in-view">
+            <!-- Left Column: Checkout Form -->
+            <form id="checkout-form" novalidate>
+              <!-- Contact & Shipping Details -->
+              <div class="checkout-form-section">
+                <h2 class="form-section-title">Shipping Address</h2>
+
+                <div class="form-group">
+                  <label for="input-name" class="form-label">Full Name *</label>
+                  <input type="text" id="input-name" class="form-input" placeholder="e.g. Arjun Sharma" required autocomplete="name">
+                  <span class="error-msg" id="err-name">Please enter your full name.</span>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="input-email" class="form-label">Email Address *</label>
+                    <input type="email" id="input-email" class="form-input" placeholder="arjun@example.com" required autocomplete="email">
+                    <span class="error-msg" id="err-email">Please enter a valid email address.</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="input-phone" class="form-label">Mobile Number *</label>
+                    <input type="tel" id="input-phone" class="form-input" placeholder="9876543210" maxlength="10" required autocomplete="tel">
+                    <span class="error-msg" id="err-phone">Please enter a 10-digit mobile number.</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="input-address" class="form-label">Street Address / House / Flat *</label>
+                  <input type="text" id="input-address" class="form-input" placeholder="Apartment 402, Greenfield Residency" required autocomplete="street-address">
+                  <span class="error-msg" id="err-address">Please provide your street address.</span>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="input-city" class="form-label">City *</label>
+                    <input type="text" id="input-city" class="form-input" placeholder="Bengaluru" required autocomplete="address-level2">
+                    <span class="error-msg" id="err-city">Please enter your city.</span>
+                  </div>
+                  <div class="form-group">
+                    <label for="input-pincode" class="form-label">PIN Code (6 Digits) *</label>
+                    <input type="text" id="input-pincode" class="form-input" placeholder="560001" maxlength="6" required autocomplete="postal-code">
+                    <span class="error-msg" id="err-pincode">Please enter a valid 6-digit PIN code.</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Method Section -->
+              <div class="checkout-form-section">
+                <h2 class="form-section-title">Payment Method</h2>
+                <div class="payment-methods" role="radiogroup" aria-label="Select Payment Method">
+                  
+                  <label class="payment-method-card">
+                    <input type="radio" name="paymentMethod" value="UPI" checked>
+                    <div class="payment-method-details">
+                      <span class="payment-method-title">UPI (Instant Verification)</span>
+                      <span class="payment-method-sub">Google Pay, PhonePe, Paytm, BHIM, or any UPI ID</span>
+                    </div>
+                  </label>
+
+                  <label class="payment-method-card">
+                    <input type="radio" name="paymentMethod" value="Card">
+                    <div class="payment-method-details">
+                      <span class="payment-method-title">Credit or Debit Card</span>
+                      <span class="payment-method-sub">Visa, MasterCard, RuPay, and American Express</span>
+                    </div>
+                  </label>
+
+                  <label class="payment-method-card">
+                    <input type="radio" name="paymentMethod" value="COD">
+                    <div class="payment-method-details">
+                      <span class="payment-method-title">Cash on Delivery</span>
+                      <span class="payment-method-sub">Pay in cash or UPI to the courier upon delivery</span>
+                    </div>
+                  </label>
+
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <button type="submit" class="btn-pill" style="width: 100%; padding: 16px; font-size: 16px; justify-content: center;">
+                Place Order • ${formatPrice(total)}
+              </button>
+            </form>
+
+            <!-- Right Column: Order Summary Preview -->
+            <aside class="cart-summary-card" aria-label="Order Details">
+              <h2 class="summary-title">Your Order (${itemCount} ${itemCount === 1 ? 'item' : 'items'})</h2>
+
+              <div style="display: flex; flex-direction: column; gap: 16px; max-height: 280px; overflow-y: auto; padding-right: 6px;">
+                ${cart.map(item => `
+                  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 15px;">
+                    <div>
+                      <div style="font-weight: 500;">${item.name} <span style="font-weight: 400; color: var(--text-secondary);">× ${item.quantity}</span></div>
+                      <div style="font-size: 13px; color: var(--text-secondary);">${item.colorName || ""}</div>
+                    </div>
+                    <div style="font-weight: 500;">${formatPrice(item.price * item.quantity)}</div>
+                  </div>
+                `).join("")}
+              </div>
+
+              <div style="border-top: 1px solid var(--border-light); padding-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="summary-row">
+                  <span>Subtotal</span>
+                  <span>${formatPrice(subtotal)}</span>
+                </div>
+                <div class="summary-row">
+                  <span>Express Shipping</span>
+                  <span style="color: #34c759; font-weight: 500;">FREE</span>
+                </div>
+                <div class="summary-row">
+                  <span>GST (18%)</span>
+                  <span>${formatPrice(gst)}</span>
+                </div>
+                <div class="summary-row total">
+                  <span>Total Amount</span>
+                  <span>${formatPrice(total)}</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+        `;
+
+        // Form submission & validation
+        const form = document.getElementById("checkout-form");
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          let hasError = false;
+
+          const nameEl = document.getElementById("input-name");
+          const emailEl = document.getElementById("input-email");
+          const phoneEl = document.getElementById("input-phone");
+          const addressEl = document.getElementById("input-address");
+          const cityEl = document.getElementById("input-city");
+          const pincodeEl = document.getElementById("input-pincode");
+
+          // Reset errors
+          document.querySelectorAll(".form-input").forEach(i => i.classList.remove("error"));
+          document.querySelectorAll(".error-msg").forEach(m => m.classList.remove("visible"));
+
+          // Name validation
+          if (!nameEl.value.trim()) {
+            nameEl.classList.add("error");
+            document.getElementById("err-name").classList.add("visible");
+            hasError = true;
+          }
+
+          // Email validation
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(emailEl.value.trim())) {
+            emailEl.classList.add("error");
+            document.getElementById("err-email").classList.add("visible");
+            hasError = true;
+          }
+
+          // Phone validation (10 digits)
+          const phoneClean = phoneEl.value.replace(/\D/g, "");
+          if (phoneClean.length !== 10) {
+            phoneEl.classList.add("error");
+            document.getElementById("err-phone").classList.add("visible");
+            hasError = true;
+          }
+
+          // Address validation
+          if (!addressEl.value.trim()) {
+            addressEl.classList.add("error");
+            document.getElementById("err-address").classList.add("visible");
+            hasError = true;
+          }
+
+          // City validation
+          if (!cityEl.value.trim()) {
+            cityEl.classList.add("error");
+            document.getElementById("err-city").classList.add("visible");
+            hasError = true;
+          }
+
+          // PIN code validation (6 digits)
+          const pinClean = pincodeEl.value.replace(/\D/g, "");
+          if (pinClean.length !== 6) {
+            pincodeEl.classList.add("error");
+            document.getElementById("err-pincode").classList.add("visible");
+            hasError = true;
+          }
+
+          if (hasError) return;
+
+          // Selected payment method
+          const paymentMethod = form.querySelector('input[name="paymentMethod"]:checked').value;
+
+          // Generate order details
+          const orderNumber = "DHV-" + Math.floor(100000 + Math.random() * 900000);
+          const orderData = {
+            orderNumber,
+            name: nameEl.value.trim(),
+            email: emailEl.value.trim(),
+            address: `${addressEl.value.trim()}, ${cityEl.value.trim()} - ${pinClean}`,
+            paymentMethod,
+            total,
+            items: [...cart]
+          };
+
+          // Clear cart
+          clearCart();
+
+          // Render Success Confirmation Screen
+          renderOrderConfirmation(orderData);
+        });
+      }
+
+      function renderOrderConfirmation(order) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        container.innerHTML = `
+          <div class="order-success-card fade-up in-view">
+            <div class="success-icon" aria-hidden="true">✓</div>
+            <p class="feature-eyebrow" style="color: #34c759;">Order Confirmed</p>
+            <h1 class="headline-section" style="margin-bottom: 8px;">Thank you, ${order.name}.</h1>
+            <p class="subheadline" style="max-width: 540px; margin: 0 auto;">Your Dhvani acoustic equipment is being prepared for dispatch.</p>
+
+            <div class="order-number-pill">
+              Order Number: <strong>${order.orderNumber}</strong>
+            </div>
+
+            <div style="background-color: #ffffff; border-radius: var(--radius-sm); border: 1px solid var(--border-light); padding: 24px; text-align: left; max-width: 520px; margin: 24px auto;">
+              <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px;">Delivery Details</h3>
+              <p style="font-size: 14px; margin-bottom: 6px;"><strong>Deliver to:</strong> ${order.name}</p>
+              <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 6px;"><strong>Address:</strong> ${order.address}</p>
+              <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 6px;"><strong>Updates sent to:</strong> ${order.email}</p>
+              <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 6px;"><strong>Payment Method:</strong> ${order.paymentMethod}</p>
+              <p style="font-size: 14px; color: var(--text-secondary);"><strong>Total Paid:</strong> ${formatPrice(order.total)}</p>
+
+              <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-light); font-size: 13px; color: var(--text-tertiary);">
+                Estimated Delivery: <strong>2 - 3 Business Days via BlueDart Express</strong>
+              </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 32px;">
+              <a href="products.html" class="btn-pill">Continue Exploring</a>
+              <a href="index.html" class="btn-link">Back to Home <span class="arrow">›</span></a>
+            </div>
+          </div>
+        `;
+      }
+
+      renderCheckout();
+    });
+  </script>
+</body>
+</html>

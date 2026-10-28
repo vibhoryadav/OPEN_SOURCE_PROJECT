@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details — Dhvani Audio</title>
+  <meta name="description" content="Explore acoustic specifications, color variants, and engineering features of Dhvani audio equipment.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Global Navigation -->
+  <header id="site-header"></header>
+
+  <main>
+    <div class="container">
+      <!-- Dynamic Product Detail Layout -->
+      <section class="product-detail-layout" id="product-detail-container">
+        <!-- Rendered by JavaScript -->
+      </section>
+
+      <!-- Technical Specifications Table -->
+      <section class="specs-section fade-up" id="specs-container">
+        <!-- Rendered by JavaScript -->
+      </section>
+
+      <!-- What's in the box Section -->
+      <section class="in-box-section fade-up" id="box-container">
+        <!-- Rendered by JavaScript -->
+      </section>
+
+      <!-- You might also like Section -->
+      <section class="related-section fade-up">
+        <h2 class="related-title">You might also like</h2>
+        <div class="product-grid" id="related-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <!-- Rendered by JavaScript -->
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Dynamic Global Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="js/products.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Resolve product from query param ?id=... or hash or default to flagship
+      const urlParams = new URLSearchParams(window.location.search);
+      let productId = urlParams.get("id");
+      if (!productId && window.location.hash) {
+        productId = window.location.hash.replace("#", "");
+      }
+      if (!productId) {
+        productId = "dhvani-max"; // graceful default
+      }
+
+      const product = getProductById(productId) || getProductById("dhvani-max");
+      if (!product) return;
+
+      // Update page title
+      document.title = `${product.name} — Dhvani`;
+
+      // Track currently selected color
+      let selectedColor = product.colors[0];
+
+      const detailContainer = document.getElementById("product-detail-container");
+      const specsContainer = document.getElementById("specs-container");
+      const boxContainer = document.getElementById("box-container");
+      const relatedGrid = document.getElementById("related-grid");
+
+      function renderMainProduct() {
+        detailContainer.innerHTML = `
+          <!-- Left Column: Large Visual -->
+          <div class="detail-visual-column">
+            <div id="active-product-visual" style="width: 100%; display: flex; justify-content: center;">
+              ${renderProductVisual(product, selectedColor.hex, "hero-visual-svg")}
+            </div>
+          </div>
+
+          <!-- Right Column: Product Meta & Purchase -->
+          <div class="detail-info-column">
+            <span class="detail-badge">${product.badge}</span>
+            <h1 class="detail-name">${product.name}</h1>
+            <p class="detail-tagline">${product.tagline}</p>
+            <p class="detail-price">${formatPrice(product.price)}</p>
+
+            <!-- Color Swatches -->
+            <div class="swatch-section">
+              <div class="swatch-label">Finish: <span id="selected-color-name">${selectedColor.name}</span></div>
+              <div class="swatch-group" role="radiogroup" aria-label="Select finish">
+                ${product.colors.map(c => `
+                  <button 
+                    type="button"
+                    class="color-swatch-btn ${c.hex === selectedColor.hex ? 'selected' : ''}" 
+                    data-hex="${c.hex}" 
+                    data-name="${c.name}"
+                    style="background-color: ${c.hex};"
+                    aria-label="${c.name} finish"
+                    aria-checked="${c.hex === selectedColor.hex}"
+                    role="radio">
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+
+            <!-- Description -->
+            <p class="detail-desc">${product.description}</p>
+
+            <!-- Key Features -->
+            <div class="features-list-title">Key Engineering Highlights</div>
+            <ul class="features-list">
+              ${product.features.map(f => `<li>${f}</li>`).join("")}
+            </ul>
+
+            <!-- Actions -->
+            <div class="detail-actions">
+              <button class="btn-pill" id="detail-add-bag-btn">
+                Add to Bag • ${formatPrice(product.price)}
+              </button>
+            </div>
+          </div>
+        `;
+
+        // Attach Swatch Click Listeners
+        const swatchButtons = detailContainer.querySelectorAll(".color-swatch-btn");
+        const visualSlot = document.getElementById("active-product-visual");
+        const colorNameLabel = document.getElementById("selected-color-name");
+
+        swatchButtons.forEach(btn => {
+          btn.addEventListener("click", () => {
+            swatchButtons.forEach(b => {
+              b.classList.remove("selected");
+              b.setAttribute("aria-checked", "false");
+            });
+            btn.classList.add("selected");
+            btn.setAttribute("aria-checked", "true");
+
+            const hex = btn.getAttribute("data-hex");
+            const name = btn.getAttribute("data-name");
+            selectedColor = product.colors.find(c => c.hex === hex) || { name, hex };
+
+            colorNameLabel.textContent = selectedColor.name;
+            // Update SVG visual with smooth transition
+            visualSlot.innerHTML = renderProductVisual(product, selectedColor.hex, "hero-visual-svg");
+          });
+        });
+
+        // Attach Add to Bag Listener
+        const addBtn = document.getElementById("detail-add-bag-btn");
+        if (addBtn) {
+          addBtn.addEventListener("click", () => {
+            addToCart(product.id, selectedColor.hex, 1);
+          });
+        }
+      }
+
+      function renderSpecs() {
+        const s = product.specs;
+        specsContainer.innerHTML = `
+          <h2 class="specs-title">Technical Specifications</h2>
+          <table class="specs-table">
+            <tbody>
+              <tr>
+                <td>Battery Life</td>
+                <td>${s.batteryLife}</td>
+              </tr>
+              <tr>
+                <td>Acoustic Drivers</td>
+                <td>${s.driverSize}</td>
+              </tr>
+              <tr>
+                <td>Bluetooth Connectivity</td>
+                <td>${s.bluetooth}</td>
+              </tr>
+              <tr>
+                <td>Noise Cancellation</td>
+                <td>${s.noiseCancellation}</td>
+              </tr>
+              <tr>
+                <td>Water & Sweat Resistance</td>
+                <td>${s.waterResistance}</td>
+              </tr>
+              <tr>
+                <td>Weight</td>
+                <td>${s.weight}</td>
+              </tr>
+              <tr>
+                <td>Charging</td>
+                <td>${s.chargingType}</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
+
+      function renderInTheBox() {
+        boxContainer.innerHTML = `
+          <h3 class="in-box-title">What's in the box</h3>
+          <div class="in-box-grid">
+            ${product.inTheBox.map(item => `
+              <div class="in-box-pill">${item}</div>
+            `).join("")}
+          </div>
+        `;
+      }
+
+      function renderRelated() {
+        const others = PRODUCTS.filter(p => p.id !== product.id).slice(0, 3);
+        relatedGrid.innerHTML = others.map(p => `
+          <div class="product-card">
+            <span class="card-badge">${p.badge}</span>
+            <a href="product.html?id=${p.id}" class="product-card-visual" aria-label="View ${p.name}">
+              ${renderProductVisual(p, p.colors[0].hex)}
+            </a>
+            <h3 class="product-card-title"><a href="product.html?id=${p.id}">${p.name}</a></h3>
+            <p class="product-card-tagline">${p.tagline}</p>
+            <p class="product-card-price">${formatPrice(p.price)}</p>
+            <div class="product-card-actions">
+              <a href="product.html?id=${p.id}" class="btn-pill" style="padding: 8px 18px; font-size: 13px;">View</a>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      renderMainProduct();
+      renderSpecs();
+      renderInTheBox();
+      renderRelated();
+      initScrollAnimations();
+    });
+  </script>
+</body>
+</html>

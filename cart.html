@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review your Bag — Dhvani Audio</title>
+  <meta name="description" content="Review your Dhvani items, update quantities, calculate GST, and proceed to checkout.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Global Navigation -->
+  <header id="site-header"></header>
+
+  <main>
+    <div class="container">
+      <section class="cart-header fade-up">
+        <h1 class="headline-section" id="cart-heading">Review your Bag.</h1>
+        <p class="body-large" style="margin-top: 6px;">Free delivery and complimentary returns on all orders across India.</p>
+      </section>
+
+      <!-- Cart Content Layout -->
+      <section id="cart-content-wrapper">
+        <!-- Rendered by JavaScript: items or empty state -->
+      </section>
+    </div>
+  </main>
+
+  <!-- Dynamic Global Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="js/products.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById("cart-content-wrapper");
+
+      function renderCart() {
+        const { cart, itemCount, subtotal, gst, total } = getCartCalculations();
+
+        if (cart.length === 0) {
+          container.innerHTML = `
+            <div class="empty-cart-state fade-up in-view">
+              <h2 class="empty-cart-title">Your Bag is empty.</h2>
+              <p class="empty-cart-desc">Discover our range of precision-crafted headphones and earphones.</p>
+              <a href="products.html" class="btn-pill">Continue Shopping</a>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="cart-layout fade-up in-view">
+            <!-- Left Column: Line Items -->
+            <div class="cart-items-list">
+              ${cart.map((item, index) => {
+                const prod = getProductById(item.id);
+                const visualMarkup = prod ? renderProductVisual(prod, item.colorHex) : "";
+
+                return `
+                  <div class="cart-item">
+                    <div class="cart-item-visual">
+                      ${visualMarkup}
+                    </div>
+
+                    <div class="cart-item-info">
+                      <h2 class="cart-item-title">${item.name}</h2>
+                      <p class="cart-item-color">Finish: ${item.colorName || "Standard"}</p>
+                      <p class="cart-item-price">${formatPrice(item.price)} each</p>
+                    </div>
+
+                    <div class="cart-item-controls">
+                      <div class="qty-counter" role="group" aria-label="Quantity selector">
+                        <button type="button" class="qty-btn btn-qty-minus" data-index="${index}" aria-label="Decrease quantity">−</button>
+                        <span class="qty-value">${item.quantity}</span>
+                        <button type="button" class="qty-btn btn-qty-plus" data-index="${index}" aria-label="Increase quantity">+</button>
+                      </div>
+
+                      <div style="font-weight: 600; font-size: 17px;">
+                        ${formatPrice(item.price * item.quantity)}
+                      </div>
+
+                      <button type="button" class="cart-remove-btn" data-index="${index}">
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+
+            <!-- Right Column: Order Summary -->
+            <aside class="cart-summary-card" aria-label="Order Summary">
+              <h2 class="summary-title">Summary</h2>
+
+              <div class="summary-row">
+                <span>Subtotal</span>
+                <span>${formatPrice(subtotal)}</span>
+              </div>
+
+              <div class="summary-row">
+                <span>Shipping</span>
+                <span style="color: #34c759; font-weight: 500;">FREE</span>
+              </div>
+
+              <div class="summary-row">
+                <span>Estimated GST (18%)</span>
+                <span>${formatPrice(gst)}</span>
+              </div>
+
+              <div class="summary-row total">
+                <span>Total</span>
+                <span>${formatPrice(total)}</span>
+              </div>
+
+              <div style="margin-top: 16px;">
+                <a href="checkout.html" class="btn-pill" style="width: 100%; text-align: center; justify-content: center; padding: 16px 24px; font-size: 16px;">
+                  Check Out
+                </a>
+              </div>
+
+              <p class="caption" style="text-align: center; margin-top: 10px;">
+                Secure checkout powered by Dhvani Pay. 30-day money-back guarantee.
+              </p>
+            </aside>
+          </div>
+        `;
+
+        // Attach quantity buttons
+        container.querySelectorAll(".btn-qty-minus").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const idx = parseInt(btn.getAttribute("data-index"), 10);
+            updateCartItemQuantity(idx, cart[idx].quantity - 1);
+            renderCart();
+          });
+        });
+
+        container.querySelectorAll(".btn-qty-plus").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const idx = parseInt(btn.getAttribute("data-index"), 10);
+            updateCartItemQuantity(idx, cart[idx].quantity + 1);
+            renderCart();
+          });
+        });
+
+        container.querySelectorAll(".cart-remove-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const idx = parseInt(btn.getAttribute("data-index"), 10);
+            removeCartItem(idx);
+            renderCart();
+          });
+        });
+      }
+
+      // Initial render
+      renderCart();
+
+      // Listen for updates from other tabs/windows if needed
+      window.addEventListener("dhvani-cart-updated", () => {
+        renderCart();
+      });
+    });
+  </script>
+</body>
+</html>

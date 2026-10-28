@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compare Models — Dhvani Audio</title>
+  <meta name="description" content="Compare Dhvani headphones and earphones side by side. Battery life, active noise cancellation, driver architecture, and water resistance.">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Dynamic Global Navigation -->
+  <header id="site-header"></header>
+
+  <main>
+    <div class="container">
+      <section class="compare-header fade-up">
+        <p class="feature-eyebrow">Direct Comparison</p>
+        <h1 class="headline-section">Compare Dhvani Models.</h1>
+        <p class="subheadline" style="max-width: 600px; margin: 12px auto 0 auto;">Select any three models to analyze specifications and acoustic technologies side by side.</p>
+      </section>
+
+      <!-- Side-by-Side Comparison Table -->
+      <section class="compare-matrix-wrapper fade-up">
+        <table class="compare-matrix" id="comparison-table">
+          <thead>
+            <tr>
+              <!-- 3 Column Headers with Dropdown Selectors -->
+              <th class="compare-col-header" id="col-header-0"></th>
+              <th class="compare-col-header" id="col-header-1"></th>
+              <th class="compare-col-header" id="col-header-2"></th>
+            </tr>
+          </thead>
+          <tbody id="comparison-body">
+            <!-- Populated dynamically by JavaScript -->
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+
+  <!-- Dynamic Global Footer -->
+  <footer id="site-footer"></footer>
+
+  <!-- Scripts -->
+  <script src="js/products.js"></script>
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Default initial 3 products
+      let selectedProductIds = ["dhvani-max", "dhvani-studio", "dhvani-air-pro"];
+
+      // Check query params if any
+      const urlParams = new URLSearchParams(window.location.search);
+      const p1 = urlParams.get("p1");
+      const p2 = urlParams.get("p2");
+      const p3 = urlParams.get("p3");
+      if (p1 && getProductById(p1)) selectedProductIds[0] = p1;
+      if (p2 && getProductById(p2)) selectedProductIds[1] = p2;
+      if (p3 && getProductById(p3)) selectedProductIds[2] = p3;
+
+      function renderHeaders() {
+        selectedProductIds.forEach((prodId, colIndex) => {
+          const colEl = document.getElementById(`col-header-${colIndex}`);
+          const product = getProductById(prodId) || PRODUCTS[colIndex];
+
+          colEl.innerHTML = `
+            <select class="compare-selector" data-col="${colIndex}" aria-label="Select model for column ${colIndex + 1}">
+              ${PRODUCTS.map(p => `
+                <option value="${p.id}" ${p.id === product.id ? "selected" : ""}>${p.name}</option>
+              `).join("")}
+            </select>
+
+            <div class="compare-visual">
+              ${renderProductVisual(product, product.colors[0].hex)}
+            </div>
+            
+            <h3 class="compare-col-name">${product.name}</h3>
+            <p class="compare-col-price">${formatPrice(product.price)}</p>
+
+            <button class="btn-pill btn-compare-buy" data-id="${product.id}" style="padding: 8px 18px; font-size: 13px;">
+              Add to Bag
+            </button>
+          `;
+        });
+
+        // Attach dropdown change listeners
+        document.querySelectorAll(".compare-selector").forEach(sel => {
+          sel.addEventListener("change", (e) => {
+            const col = parseInt(e.target.getAttribute("data-col"), 10);
+            selectedProductIds[col] = e.target.value;
+            renderMatrix();
+          });
+        });
+
+        // Attach Buy button listeners
+        document.querySelectorAll(".btn-compare-buy").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            const id = e.currentTarget.getAttribute("data-id");
+            addToCart(id);
+          });
+        });
+      }
+
+      function renderMatrix() {
+        renderHeaders();
+
+        const pList = selectedProductIds.map(id => getProductById(id) || PRODUCTS[0]);
+        const tbody = document.getElementById("comparison-body");
+
+        const specRows = [
+          {
+            section: "Acoustic Architecture",
+            rows: [
+              { label: "Category", getVal: p => p.categoryLabel },
+              { label: "Acoustic Drivers", getVal: p => p.specs.driverSize },
+              { label: "Active Noise Cancellation", getVal: p => p.specs.noiseCancellation },
+              { label: "Key Acoustic Focus", getVal: p => p.tagline }
+            ]
+          },
+          {
+            section: "Power & Endurance",
+            rows: [
+              { label: "Battery Playback Time", getVal: p => p.specs.batteryLife },
+              { label: "Fast Charging Standard", getVal: p => p.specs.chargingType }
+            ]
+          },
+          {
+            section: "Design & Connectivity",
+            rows: [
+              { label: "Bluetooth Architecture", getVal: p => p.specs.bluetooth },
+              { label: "Water & Sweat Resistance", getVal: p => p.specs.waterResistance },
+              { label: "Chassis Weight", getVal: p => p.specs.weight },
+              { label: "Available Finishes", getVal: p => p.colors.map(c => c.name).join(", ") }
+            ]
+          }
+        ];
+
+        let html = "";
+        specRows.forEach(sec => {
+          // Section divider row spanning 3 columns
+          html += `
+            <tr>
+              <td colspan="3" class="compare-row-category">${sec.section}</td>
+            </tr>
+          `;
+
+          sec.rows.forEach(r => {
+            html += `
+              <tr>
+                <td colspan="3" class="compare-row-label">${r.label}</td>
+              </tr>
+              <tr>
+                ${pList.map(p => `
+                  <td class="compare-cell">${r.getVal(p)}</td>
+                `).join("")}
+              </tr>
+            `;
+          });
+        });
+
+        tbody.innerHTML = html;
+      }
+
+      renderMatrix();
+      initScrollAnimations();
+    });
+  </script>
+</body>
+</html>
